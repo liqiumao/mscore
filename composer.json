@@ -1,20 +1,16 @@
 {
-  "name": "mscore/package",
-  "description": "mscore library.",
-  "license": "MIT",
-  "type": "library",
-  "authors": [
-    {
-      "name": "MS RisingSun",
-      "email": "316328674@qq.com"
-    }
-  ],
-  "require": {
-    "php": ">=7.1"
-  },
-  "autoload": {
-    "psr-4": {
-      "ms\\core\\": "./src"
-    }
-  }
+    "name": "mscore/core",
+    "description": "this is ms core file",
+    "autoload": {
+        "psr-4": {
+            "Mscore\\Core\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "liqiumao",
+            "email": "316328674@qq.com"
+        }
+    ],
+    "require": {}
 }
