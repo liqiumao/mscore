@@ -1,0 +1,20 @@
+{
+  "name": "mscore/package",
+  "description": "mscore library.",
+  "license": "MIT",
+  "type": "library",
+  "authors": [
+    {
+      "name": "MS RisingSun",
+      "email": "316328674@qq.com"
+    }
+  ],
+  "require": {
+    "php": ">=7"
+  },
+  "autoload": {
+    "psr-4": {
+      "ms\\core\\": "./src"
+    }
+  }
+}
