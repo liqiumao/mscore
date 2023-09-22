@@ -4,7 +4,7 @@
  * author：LQM  RisingSun
  * Time:20220326
  */
-namespace ms\core;
+namespace Mscore\Core;
 
 use Redis as RedisBase;
 
@@ -29,6 +29,7 @@ class Redis
     private $Db_Master;
 
     private $handler;
+    protected static $cache; //支持多数据库
 
  
     /**
@@ -70,7 +71,7 @@ class Redis
             echo ('not support:redis');die;
         }
         $config = array();
-        $config=Config::get('redis')['redis_db'];
+        $config=self::configget('redis')['redis_db'];
         $isUseCluster = $config['db_isusecluster'];
         $hosts = $config['db_host'];
         $ports = $config['db_port'];
@@ -137,6 +138,7 @@ class Redis
      * 执行命令
      */
     public function runCommand($command, $params) {
+        $command=strtolower($command);
         try{
             $redis = $this->getByCommand($command);
             return call_user_func_array([$redis, $command], $params);
@@ -156,6 +158,7 @@ class Redis
      * 注意：serialize/unserialize 所有对象的序列化与反序列化需要自己重新设定
      */
     protected function getByCommand($command) {
+        $command=strtolower($command);
         $read_command = ['get', 'hget', 'mget', 'hmget', 'hgetAll', 'lrange', 'ttl'];
         $write_command = ['set','setex','mset', 'hset', 'hmset', 'delete', 'del','incr','incrBy','flushDB','incr','incrBy','decr','decrBy','lpush','lpop','lrange','hdel','multi','exec','expire'];
         if(in_array($command, $read_command)) {     //读命令，随机返回一台读服务器
@@ -169,6 +172,21 @@ class Redis
         } else {
             echo ('The command is not supported:'.$command);die;
         }
+    }
+    /**
+     *  获取配置文件的值
+     *  @param $key 标识config文件名 配置文件里统一使用return array的形式
+    */
+    public static function configget($key,$path='/config/')
+    {
+        if (isset(self::$cache[$path][$key])) return self::$cache[$path][$key];
+        $file = dirname(dirname(dirname(dirname(dirname(__FILE__))))). $path .$key. '.php';
+        if (is_file($file)) {
+            self::$cache[$path][$key] = include $file;
+        } else {
+            return false;
+        }
+        return self::$cache[$path][$key];
     }
         
 }

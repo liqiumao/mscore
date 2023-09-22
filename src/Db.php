@@ -6,10 +6,9 @@
  * Create on 2021/7/28 15:16
  */
 
-namespace ms\core;
+namespace Mscore\Core;
 
-use ms\core\Error;
-use ms\core\Log;
+use Mscore\Core\Error;
 
 class Db
 {
@@ -31,13 +30,14 @@ class Db
         'joinp'=>'',
     ]; //连贯操作储存
     private $Db_Prefix = '';
+    protected static $cache; //支持多数据库
 
     /**
      * 初始化设置数据库信息
      * @param $config
      */
-    public static function setHosts($config=''){
-        $config=Config::get('Database');
+    public static function setHosts(){
+        $config=self::configget('database');
         return $config;
     }
 
@@ -67,22 +67,22 @@ class Db
             $Db = new self();
 
             if($conf['db_provider']=='mysql'){
-            $dsn = "{$conf['db_provider']}:host={$conf['db_host']};dbname={$conf['db_name']};charset={$conf['db_charset']};port={$conf['db_port']}";
-            $user = $conf['db_user'];
-            $password = $conf['db_pwd'];
-            $Db->pdo = new \PDO($dsn, $user, $password, array(\PDO::ATTR_PERSISTENT=>$conf['db_connection'])  /*持久性链接PDO::ATTR_PERSISTENT=>true*/ );
+                $dsn = "{$conf['db_provider']}:host={$conf['db_host']};dbname={$conf['db_name']};charset={$conf['db_charset']};port={$conf['db_port']}";
+                $user = $conf['db_user'];
+                $password = $conf['db_pwd'];
+                $Db->pdo = new \PDO($dsn, $user, $password, array(\PDO::ATTR_PERSISTENT=>$conf['db_connection'])  /*持久性链接PDO::ATTR_PERSISTENT=>true*/ );
             }elseif($conf['db_provider']=='MSSQL'){
-            $dsn = "odbc:Driver=".$conf['mssqldriver'].";Server=".$conf['db_host'].",".$conf['db_port'].";Database=".$conf['db_name'].";";
-            $user = $conf['db_user'];
-            $password = $conf['db_pwd'];
-            $Db->pdo = new \PDO($dsn, $user, $password,array(\PDO::ATTR_PERSISTENT=>$conf['db_connection'])  /*持久性链接PDO::ATTR_PERSISTENT=>true*/ );
+                $dsn = "odbc:Driver=".$conf['mssqldriver'].";Server=".$conf['db_host'].",".$conf['db_port'].";Database=".$conf['db_name'].";";
+                $user = $conf['db_user'];
+                $password = $conf['db_pwd'];
+                $Db->pdo = new \PDO($dsn, $user, $password,array(\PDO::ATTR_PERSISTENT=>$conf['db_connection'])  /*持久性链接PDO::ATTR_PERSISTENT=>true*/ );
             }elseif($conf['db_provider']=='sqlite'){
-            if (!file_exists($conf['path'])) {
-            echo('本地数据库不存在，请初始化数据库！' ); 
-            exit;
+                if (!file_exists($conf['path'])) {
+                    echo('本地数据库不存在，请初始化数据库！' ); 
+                return;
             } 
-            $Db->pdo = new \PDO('sqlite:'.$conf['path']);
-            if (!pdo){ echo '数据库连接失败'; exit;} 
+                $Db->pdo = new \PDO('sqlite:'.$conf['path']);
+                if (!pdo){ echo '数据库连接失败'; exit;} 
             }
             $Db->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             return $Db;
@@ -110,11 +110,9 @@ class Db
      */
     public static function table($table_name)
     {
-        
-        // self::$hosts=self::setHosts();
+
         $Instance = self::getInstance();
         $Instance->table = $table_name;
-        // $Instance->Db_Prefix = self::$hosts[self::$instance_index]['Db_Prefix'];
         $Instance->Db_Prefix = self::prefix(); 
         $Instance->options =[
             'field'=>'*',
@@ -724,11 +722,11 @@ class Db
      * @err $e错误
     */  
     public function showLog($sqlStartTime,$sqlEndTime,$sql){
-    $logdebug = Config::get('config')["logdebug"];
-      if ($logdebug['SQL_LOG']) {
-        unset($logdebug);
-        Log::write(sprintf("SQL COSETIME=【%s】ms,SQL=【%s】", ($sqlEndTime - $sqlStartTime), $sql),Log::SQL,Log::FILE,RUN_PATH.'sql/'.date("y_m_d").".log");
-      }
+        $log = isset(self::configget('config')["logdebug"])?self::configget('config')["logdebug"]:false;
+        if ($log['sql_log']) {
+            unset($log['sql_log']);
+            Log::write(sprintf("sql cosetime=【%s】ms,time=【%s】", ($sqlEndTime - $sqlStartTime), $sql),$log['log_url'].'sql/'.date("y_m_d").".log");
+        }
     }
 
     /*
@@ -736,6 +734,25 @@ class Db
      * @err $e错误
     */
     public function showerrLog($e){
-    Log::write("SQL ERROR=" . json_encode($e), Log::ERROR,Log::FILE,RUN_PATH.'sql/'.date("y_m_d").".log");
+        $log = isset(self::configget('config')["logdebug"]['log_url'])?self::configget('config')["logdebug"]['log_url']:false;
+        if ($log) {
+            Log::write("sql error=" . json_encode($e), $logdebug['log_url']['log_url'].'sql/'.date("y_m_d").".log");
+        }
+    }
+
+    /**
+     *  获取配置文件的值
+     *  @param $key 标识config文件名 配置文件里统一使用return array的形式
+    */
+    public static function configget($key,$path='/config/')
+    {
+        if (isset(self::$cache[$path][$key])) return self::$cache[$path][$key];
+        $file = dirname(dirname(dirname(dirname(dirname(__FILE__))))). $path .$key. '.php';
+        if (is_file($file)) {
+            self::$cache[$path][$key] = include $file;
+        } else {
+            return false;
+        }
+        return self::$cache[$path][$key];
     }
 }

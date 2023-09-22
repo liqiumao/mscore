@@ -5,7 +5,7 @@
  * 异常输出类
  */
 
-namespace ms\core;
+namespace Mscore\Core;
 
 class Error
 {

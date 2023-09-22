@@ -3,7 +3,7 @@
     "description": "this is ms core file",
     "autoload": {
         "psr-4": {
-            "Mscore\\Core\\": "src/"
+            "mscore\\core\\": "src/"
         }
     },
     "authors": [
