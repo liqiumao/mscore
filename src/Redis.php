@@ -68,7 +68,8 @@ class Redis
     public static function getInstance($selects=null) {
         // 检测php环境
         if (!extension_loaded('redis')) {
-            echo ('not support:redis');die;
+            echo ('not support:redis');
+            return false;
         }
         $config = array();
         $config=self::configget('redis')['redis_db'];
@@ -76,9 +77,6 @@ class Redis
         $hosts = $config['db_host'];
         $ports = $config['db_port'];
         $pwds = $config['db_pwd'];
-        if($selects==null){
-            $selects = $config['db_select'];
-        }
         if($isUseCluster){
             if(count($hosts) < 2 || $ports < 2) {
                 echo ('config error： at least 2 host and 2 port needed');die;
@@ -93,13 +91,28 @@ class Redis
             }
             return self::$_instance[0];
         }else{
-            if($selects==null){
-                $selects = $config['db_select'][0]; //根据配置文件获得默认库
-            }
+            $selects = isset($config['db_select'][0])?$config['db_select'][0]:0; //根据配置文件获得默认库
             return self::$_instance[0] = new self($config['db_connection'],$hosts[0], $ports[0],isset($pwds[0])?$pwds[0]:'', $selects?intval($selects):0, $config['db_timeout'], $config['db_debug']);
         }
         
+    }
+
+    /*
+     * 执行
+     * @param exec 执行
+    */
+    public static function exec($meth='',$arr=[], Int $db=0) {
+        if(empty($meth)){
+            return $meth.'不能为空';
+        }
+        if(empty($arr)){
+            return $arr.'不能为空';
+        }
+        if($meth){
+           return self::getInstance($db)->runCommand($meth,$arr);
+        }
     }  
+
     /**
      * 获取主服务器
      * @return mixed
@@ -159,7 +172,7 @@ class Redis
      */
     protected function getByCommand($command) {
         $command=strtolower($command);
-        $read_command = ['get', 'hget', 'mget', 'hmget', 'hgetAll', 'lrange', 'ttl'];
+        $read_command = ['get', 'hget', 'mget', 'hmget', 'hgetall', 'lrange', 'ttl'];
         $write_command = ['set','setex','mset', 'hset', 'hmset', 'delete', 'del','incr','incrBy','flushDB','incr','incrBy','decr','decrBy','lpush','lpop','lrange','hdel','multi','exec','expire'];
         if(in_array($command, $read_command)) {     //读命令，随机返回一台读服务器
             if($this->_isUseCluster){
@@ -170,7 +183,7 @@ class Redis
         } elseif(in_array($command, $write_command)) {
             return $this->master()->handler;
         } else {
-            echo ('The command is not supported:'.$command);die;
+            echo ('The command is not supported:'.$command);
         }
     }
     /**

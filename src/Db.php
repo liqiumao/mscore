@@ -112,6 +112,10 @@ class Db
     {
 
         $Instance = self::getInstance();
+        if(!$Instance){
+            echo('目标数据库错误,请检查数据库是否启动，配置是否正确'.PHP_EOL);
+            return false;
+        }
         $Instance->table = $table_name;
         $Instance->Db_Prefix = self::prefix(); 
         $Instance->options =[
@@ -593,7 +597,7 @@ class Db
         try {
             $sth = $this->pdo->prepare($sql.' LIMIT 1 ');
             $sth->execute();
-            $bute=self::$hosts[self::$instance_index]['Db_bute'];
+            $bute=self::$hosts[self::$instance_index]['db_bute'];
             if ($bute == 1) {
                 $bute = \PDO::FETCH_ASSOC;
             } elseif ($bute == 2) {
@@ -612,7 +616,7 @@ class Db
                 try {
                     $sth = $this->pdo->prepare($sql.' LIMIT 1 ');
                     $sth->execute();
-                    $bute=self::$hosts[self::$instance_index]['Db_bute'];
+                    $bute=self::$hosts[self::$instance_index]['db_bute'];
                     if ($bute == 1) {
                         $bute = \PDO::FETCH_ASSOC;
                     } elseif ($bute == 2) {
@@ -669,7 +673,7 @@ class Db
                 try {
                     $sth = $this->pdo->prepare($sql.' LIMIT 1 ');
                     $sth->execute();
-                    $bute=self::$hosts[self::$instance_index]['Db_bute'];
+                    $bute=self::$hosts[self::$instance_index]['db_bute'];
                     if ($bute == 1) {
                         $bute = \PDO::FETCH_ASSOC;
                     } elseif ($bute == 2) {
@@ -725,7 +729,7 @@ class Db
         $log = isset(self::configget('config')["logdebug"])?self::configget('config')["logdebug"]:false;
         if ($log['sql_log']) {
             unset($log['sql_log']);
-            Log::write(sprintf("sql cosetime=【%s】ms,time=【%s】", ($sqlEndTime - $sqlStartTime), $sql),$log['log_url'].'sql/'.date("y_m_d").".log");
+            Log::write(sprintf("sql time=【%s】ms,sql=【%s】", ($sqlEndTime - $sqlStartTime), $sql),$log['log_url'].'sql/'.date("y_m_d").".log");
         }
     }
 
@@ -734,9 +738,9 @@ class Db
      * @err $e错误
     */
     public function showerrLog($e){
-        $log = isset(self::configget('config')["logdebug"]['log_url'])?self::configget('config')["logdebug"]['log_url']:false;
-        if ($log) {
-            Log::write("sql error=" . json_encode($e), $logdebug['log_url']['log_url'].'sql/'.date("y_m_d").".log");
+        $log = isset(self::configget('config')["logdebug"])?self::configget('config')["logdebug"]:false;
+        if ($log['sql_log']) {
+            Log::write("sql error=" . json_encode($e), $log['log_url'].'sql/'.date("y_m_d").".log");
         }
     }
 

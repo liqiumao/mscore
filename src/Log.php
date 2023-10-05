@@ -21,8 +21,8 @@ class Log {
         if(empty($file)){
             return false;
         }
-        // 日志内容
-        if(is_file($file)){
+        // 日志内容大于1M则清空
+        if(is_file($file)&&filesize($file)>1024*1024){
             unlink($file);
             file_put_contents($file,'');
         }
